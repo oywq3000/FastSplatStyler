@@ -1,5 +1,4 @@
 # Modified from https://antimatter15.com/splat
-
 from plyfile import PlyData
 import numpy as np
 import argparse

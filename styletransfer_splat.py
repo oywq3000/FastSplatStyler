@@ -7,9 +7,7 @@ from clusters import *
 import splat_mesh_helpers as splt
 import clusters as cl
 from torch_geometric.data import Data
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
-import pointCloudToMesh as plyToMesh
-import plotly.graph_objects as go
+from scipy.interpolate import NearestNDInterpolator
 import pyvista as pv
 
 from time import time
@@ -21,7 +19,6 @@ from graph_networks.LinearStyleTransfer.libs.Matrix import MulLayer
 from graph_networks.LinearStyleTransfer.libs.models import encoder4, decoder4
 
 #import matplotlib.pyplot as plt
-from mesh_config import mesh_info
 
 
 def tinySplat(file_name):
@@ -244,19 +241,22 @@ def styletransfer_with_filtering_scaling(file_name,outPath, style_path, device =
 
     # Save/show result
     splt.splat_save(pos3D_Original.numpy(), scales_Original.numpy(), rots_Original.numpy(), colors_and_opacity_Original.numpy(), outPath, fileType)
+    #splt.ply_save(pos3D_Original.numpy(), scales_Original.numpy(), rots_Original.numpy(), colors_and_opacity_Original.numpy(), outPath, fileType)
+
+
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "file_name",
+        "--file_name",
         type=str,
-        default=''
+        default='data/content_splats/table.ply'
     )
     parser.add_argument(
         "--outPath",
         type=str,
-        default='output.splat'
+        default='data/test_outputs/table-stylized.splat'
     )
     parser.add_argument(
         "--style_path",

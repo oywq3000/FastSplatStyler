@@ -75,9 +75,33 @@ def splat_save(positions, scales, rots, colors, output_path, fileType):
 
     splatio.numpy_to_splat(positions, scales, rots, colors, output_path, fileType)
 
-    return 
+    return
 
 
+def splat_save(positions, scales, rots, colors, output_path, fileType):
+    splatio.numpy_to_splat(positions, scales, rots, colors, output_path, fileType)
+    return
+
+
+# 新增 ply_save 函数（模仿 splat_save 实现）
+def ply_save(positions, scales, rots, colors, output_path, fileType):
+    """保存点云数据为 PLY 文件（格式参考工程现有实现）"""
+    # 构建 PLY 数据 DataFrame（匹配 write_ply_float 要求的列格式）
+    ply_data = pd.DataFrame({
+        'x': positions[:, 0], 'y': positions[:, 1], 'z': positions[:, 2],  # 坐标
+        'scale_0': scales[:, 0], 'scale_1': scales[:, 1], 'scale_2': scales[:, 2],  # 缩放
+        'rot_0': rots[:, 0], 'rot_1': rots[:, 1], 'rot_2': rots[:, 2], 'rot_3': rots[:, 3],  # 旋转
+        'f_dc_0': colors[:, 0], 'f_dc_1': colors[:, 1], 'f_dc_2': colors[:, 2]  # 颜色（与工程现有格式对齐）
+    })
+
+    # 调用工程现有 PLY 写入工具（使用 pyntcloud_io）
+    plyio.write_ply_float(
+        filename=output_path,
+        points=ply_data,  # DataFrame 格式点云数据
+        mesh=None,  # 点云无需网格数据
+        as_text=False  # 二进制格式（与工程现有实现一致）
+    )
+    return
 
 def splat_randomsampler(pos3D):
 
@@ -685,3 +709,24 @@ def splat_unpacker_threshold_graph_normals(neighbors, fileName, threshold):
 
 
     return pos3DFiltered, normalsFiltered, colorsFiltered, scalesFiltered, rotsFiltered
+
+
+def splat_unpacker_threshold_return_mindistance(neighbors, fileName, threshold):
+    """扩展解压函数，额外返回点云最小距离"""
+    # 复用现有解压逻辑
+    if fileName[-3:] == 'abl':
+        pos3D_Original, _, colors_Original, opacity_Original, scales_Original, rots_Original, fileType = generate_with_noise_ablation(
+            neighbors, fileName, threshold)
+    else:
+        pos3D_Original, _, colors_Original, opacity_Original, scales_Original, rots_Original, fileType = splat_unpacker_with_threshold(
+            neighbors, fileName, threshold)
+
+    # 计算点云最小距离（使用KDTree高效查找最近邻距离）
+    from scipy.spatial import KDTree
+    pos_np = pos3D_Original.numpy()
+    tree = KDTree(pos_np)
+    distances, _ = tree.query(pos_np, k=2)  # k=2：排除自身（距离0）
+    min_distance = distances[:, 1].min()  # 取所有点最近邻距离的最小值
+
+    return pos3D_Original, _, colors_Original, opacity_Original, scales_Original, rots_Original, fileType, min_distance
+
